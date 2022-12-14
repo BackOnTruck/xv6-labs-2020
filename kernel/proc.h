@@ -106,4 +106,5 @@ struct proc {
   int interval;                // alarm interval
   void (*handler)(void);       // alarm handler
   int ticks;                   // tick counter used for alarming
+  struct trapframe old_tf;     // old trapframe used for sigreturn
 };

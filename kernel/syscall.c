@@ -119,6 +119,9 @@ uint64 sys_sigalarm(void) // int tick, void (*handler)()
 
 uint64 sys_sigreturn(void) // void
 {
+  struct proc *p=myproc();
+  *p->trapframe=p->old_tf;
+  p->ticks=0;
   return 0;
 }
 

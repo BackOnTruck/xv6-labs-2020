@@ -81,6 +81,7 @@ usertrap(void)
   {
     if(++p->ticks==p->interval)
     {
+      p->old_tf=*p->trapframe;
       p->ticks=-(1<<30);
       p->trapframe->epc = (uint64)p->handler;
     }
