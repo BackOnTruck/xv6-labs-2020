@@ -69,14 +69,18 @@ usertrap(void)
     // ok
   } else if(r_scause()==13||r_scause()==15)
   {
-    uint64 va = PGROUNDDOWN(r_stval());
-    char *mem = kalloc();
-    if(mem == 0) p->killed = 1;
-    else{
-      memset(mem, 0, PGSIZE);
-      if(mappages(p->pagetable, va, PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0){
-        kfree(mem);
-        p->killed = 1;
+    uint64 stval = r_stval(), va = PGROUNDDOWN(stval);
+    if(stval>=p->sz||stval<p->trapframe->sp)p->killed=1;
+    else
+    {
+      char *mem = kalloc();
+      if(mem == 0) p->killed = 1;
+      else{
+        memset(mem, 0, PGSIZE);
+        if(mappages(p->pagetable, va, PGSIZE, (uint64)mem, PTE_W|PTE_X|PTE_R|PTE_U) != 0){
+          kfree(mem);
+          p->killed = 1;
+        }
       }
     }
   }
