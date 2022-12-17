@@ -1,0 +1,6 @@
+- Why are there missing keys with 2 threads, but not with 1 thread?
+- Identify a sequence of events with 2 threads that can lead to a key being missing.
+当没有锁的时候，程序在单线程执行时至多有一个insert操作正在进行，不会出现key丢失；
+双线程时，可能有2个insert同时执行，例如对于一个桶c->d，线程1想把插入到表头，线程2想把b插入到表头，
+若1先执行insert，则最后一个参数n（next）是c，但是可能还没有insert完，2也开始执行insert，n还是c，
+则执行结果可能是a->c->d或b->c->d，出现key丢失。
