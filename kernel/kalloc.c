@@ -9,6 +9,8 @@
 #include "riscv.h"
 #include "defs.h"
 
+int pgrefcnt[(PHYSTOP-KERNBASE)/PGSIZE]; // reference count, one for each page
+
 void freerange(void *pa_start, void *pa_end);
 
 extern char end[]; // first address after kernel.
@@ -33,10 +35,29 @@ kinit()
 void
 freerange(void *pa_start, void *pa_end)
 {
+  memset(pgrefcnt,-1,sizeof pgrefcnt);
   char *p;
   p = (char*)PGROUNDUP((uint64)pa_start);
   for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE)
     kfree(p);
+}
+
+int cowalloc(pagetable_t pgtbl,uint64 va,uint64 old,uint64 *new_addr)
+{
+  if(pgrefcnt[PGID(old)]==1) // only replace the tags
+  {
+    uvmunmap(pgtbl,va,1,0);
+    mappages(pgtbl,va,PGSIZE,old,PTE_W|PTE_X|PTE_R|PTE_U|PTE_V);
+    return 0;
+  }
+  char *mem=kalloc();
+  if(!mem) return -1;
+  if(new_addr) *new_addr=(uint64)mem;
+
+  memmove(mem,(void*)old,PGSIZE);
+  uvmunmap(pgtbl,va,1,1);
+  mappages(pgtbl,va,PGSIZE,(uint64)mem,PTE_W|PTE_X|PTE_R|PTE_U|PTE_V);
+  return 0;
 }
 
 // Free the page of physical memory pointed at by v,
